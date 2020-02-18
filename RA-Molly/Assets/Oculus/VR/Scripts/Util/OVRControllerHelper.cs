@@ -138,28 +138,28 @@ public class OVRControllerHelper : MonoBehaviour
                 print("Activating Go controller");
 				m_modelOculusGoController.SetActive(activeControllerType == ControllerType.Go);
 				m_modelGearVrController.SetActive(activeControllerType != ControllerType.Go);
-				m_modelOculusTouchQuestAndRiftSLeftController.SetActive(false);
-				m_modelOculusTouchQuestAndRiftSRightController.SetActive(false);
-				m_modelOculusTouchRiftLeftController.SetActive(false);
-				m_modelOculusTouchRiftRightController.SetActive(false);
+				//m_modelOculusTouchQuestAndRiftSLeftController.SetActive(false);
+				//m_modelOculusTouchQuestAndRiftSRightController.SetActive(false);
+				//m_modelOculusTouchRiftLeftController.SetActive(false);
+				//m_modelOculusTouchRiftRightController.SetActive(false);
 			}
 			else if (activeControllerType == ControllerType.QuestAndRiftS)
 			{
 				m_modelOculusGoController.SetActive(false);
 				m_modelGearVrController.SetActive(false);
-				m_modelOculusTouchQuestAndRiftSLeftController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.LTouch));
-				m_modelOculusTouchQuestAndRiftSRightController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.RTouch));
-				m_modelOculusTouchRiftLeftController.SetActive(false);
-				m_modelOculusTouchRiftRightController.SetActive(false);
+				//m_modelOculusTouchQuestAndRiftSLeftController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.LTouch));
+				//m_modelOculusTouchQuestAndRiftSRightController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.RTouch));
+				//m_modelOculusTouchRiftLeftController.SetActive(false);
+				//m_modelOculusTouchRiftRightController.SetActive(false);
 			}
 			else // if (activeControllerType == ControllerType.Rift)
 			{
 				m_modelOculusGoController.SetActive(false);
 				m_modelGearVrController.SetActive(false);
-				m_modelOculusTouchQuestAndRiftSLeftController.SetActive(false);
-				m_modelOculusTouchQuestAndRiftSRightController.SetActive(false);
-				m_modelOculusTouchRiftLeftController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.LTouch));
-				m_modelOculusTouchRiftRightController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.RTouch));
+				//m_modelOculusTouchQuestAndRiftSLeftController.SetActive(false);
+				//m_modelOculusTouchQuestAndRiftSRightController.SetActive(false);
+				//m_modelOculusTouchRiftLeftController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.LTouch));
+				//m_modelOculusTouchRiftRightController.SetActive(controllerConnected && (m_controller == OVRInput.Controller.RTouch));
 			}
 
 			m_prevControllerConnected = controllerConnected;
