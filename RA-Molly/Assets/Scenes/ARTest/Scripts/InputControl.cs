@@ -21,6 +21,8 @@ public class InputControl : MonoBehaviour
 
     private float _verticalSpeed = 5f;
     private float _horizontalSpeed = 5f;
+    
+    public Dictionary<GameObject, GameObject> objectMaps = new Dictionary<GameObject, GameObject>();
 
     void Start()
     {
@@ -28,41 +30,48 @@ public class InputControl : MonoBehaviour
         this._rightHand = GameObject.Find("RightHand");
         this._hand = GameObject.Find("Hand");
         this._head = GameObject.Find("Head");
+
+
+        this.objectMaps.Add(GameObject.Find("Cube"), null);
+        this.objectMaps.Add(GameObject.Find("waterMeter"), null);
     }
 
     void Update()
     {
-        if (XRDevice.isPresent && !OVRInput.Get(OVRInput.Button.One))
+        if (XRDevice.isPresent)
         {
-            this._hand.transform.rotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTrackedRemote);
-
-        }
-        else if (Input.GetKey(KeyCode.LeftControl))
-        {
-            this._hand.GetComponent<LineRenderer>().enabled = true;
-            this._rightHand.transform.Rotate(new Vector3(-Input.GetAxis("Mouse Y") * this._horizontalSpeed, 0f, 0f));
-            this._hand.transform.Rotate(new Vector3(0f, Input.GetAxis("Mouse X") * this._verticalSpeed, 0f));
-        }
-        else if ((Input.GetKey(KeyCode.LeftAlt) || OVRInput.Get(OVRInput.Button.One)) && this._grabedObject)
-        {
-            if (XRDevice.isPresent)
+            if (!OVRInput.Get(OVRInput.Button.One))
+            {
+                this._hand.transform.rotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTrackedRemote);
+            }
+            else if (OVRInput.Get(OVRInput.Button.One) && this._grabedObject)
             {
                 this._grabedObject.transform.rotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTrackedRemote);
             }
-            else
-            {
-                this._grabedObject.transform.Rotate(new Vector3(Input.GetAxis("Mouse Y") * _rotationSpeed, -Input.GetAxis("Mouse X") * _rotationSpeed, 0f), Space.World);
-            }
-
         }
         else
         {
-            this._head.transform.Rotate(new Vector3(-Input.GetAxis("Mouse Y") * this._horizontalSpeed, 0f, 0f));
-            this.transform.Rotate(new Vector3(0f, Input.GetAxis("Mouse X") * this._verticalSpeed, 0f));
-            this._hand.GetComponent<LineRenderer>().enabled = false;
+            if (Input.GetKey(KeyCode.LeftControl))
+            {
+                print("coucou");
+                this._hand.GetComponent<LineRenderer>().enabled = true;
+                this._rightHand.transform.Rotate(new Vector3(-Input.GetAxis("Mouse Y") * this._horizontalSpeed, 0f, 0f));
+                this._hand.transform.Rotate(new Vector3(0f, Input.GetAxis("Mouse X") * this._verticalSpeed, 0f));
+            }
+            else if (Input.GetKey(KeyCode.LeftAlt) && this._grabedObject)
+            {
+                this._grabedObject.transform.Rotate(new Vector3(Input.GetAxis("Mouse Y") * _rotationSpeed, -Input.GetAxis("Mouse X") * _rotationSpeed, 0f), Space.World);
+            }
+            else
+            {
+                this._head.transform.Rotate(new Vector3(-Input.GetAxis("Mouse Y") * this._horizontalSpeed, 0f, 0f));
+                this.transform.Rotate(new Vector3(0f, Input.GetAxis("Mouse X") * this._verticalSpeed, 0f));
+                this._hand.GetComponent<LineRenderer>().enabled = false;
+            }
         }
 
         this.ManageController();
+        this.ManageGrabedPosition();
     }
 
     void ManageController()
@@ -74,7 +83,7 @@ public class InputControl : MonoBehaviour
 
         if (hit.collider)
         {
-            if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != this._grabedObject)
+            if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != this._grabedObject && !this._grabedObject)
             {
                 if (this._highLightedObject != null && this._highLightedObject != hit.transform.gameObject)
                 {
@@ -88,26 +97,71 @@ public class InputControl : MonoBehaviour
                     this._highLightedObject.transform.gameObject.GetComponent<GrabableObject>().HighLight();
                 }
             }
-            else if (this._highLightedObject != null && this._highLightedObject != hit.transform.gameObject)
+            else if (this._highLightedObject != null && this._highLightedObject != hit.transform.gameObject && !this._grabedObject)
             {
                 this._highLightedObject.GetComponent<GrabableObject>().RemoveHighLight();
                 this._highLightedObject = null;
             }
 
-            // If user click on the trigger
-            if ((OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) || Input.GetMouseButton(0)) && !this._grabedObject)
+
+            if (XRDevice.isPresent)
             {
-                if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != this._grabedObject)
+                if (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) && !this._grabedObject)
                 {
+                    if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != this._grabedObject)
+                    {
+                        print("Grab");
+                        this.GrabObject(hit.transform.gameObject);
+                    }
+                }
+                else if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) && this._grabedObject)
+                {
+                    print("Release");
+                    this.ReleaseObject();
+                }
+            }
+            else
+            {
+                if (Input.GetMouseButton(0) && !this._grabedObject)
+                {
+
                     print("Grab");
                     this.GrabObject(hit.transform.gameObject);
                 }
-            }
+                else if (!Input.GetMouseButton(0) && this._grabedObject)
+                {
+                    print("Release");
+                    this.ReleaseObject();
+                }
 
-            else if ((OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) || !Input.GetMouseButton(0)) && this._grabedObject)
+            }
+        }
+    }
+
+    void ManageGrabedPosition()
+    {
+        if (!this._grabedObject || OVRInput.Get(OVRInput.Button.One)) { return; }
+        if (XRDevice.isPresent)
+        {
+            Vector2 primaryTouchpad = OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad);
+            if (primaryTouchpad.y < 0f)
             {
-                print("Release");
-                this.ReleaseObject();
+                this._grabedObject.GetComponent<GrabableObject>().moveForward(this._hand);
+            }
+            else if (primaryTouchpad.y > 0f)
+            {
+                this._grabedObject.GetComponent<GrabableObject>().moveBackward(this._hand);
+            }
+        }
+        else
+        {
+            if (Input.GetAxis("Mouse ScrollWheel") < 0f)
+            {
+                this._grabedObject.GetComponent<GrabableObject>().moveForward(this._hand);
+            }
+            else if (Input.GetAxis("Mouse ScrollWheel") > 0f)
+            {
+                this._grabedObject.GetComponent<GrabableObject>().moveBackward(this._hand);
             }
         }
     }
@@ -125,19 +179,8 @@ public class InputControl : MonoBehaviour
         grabedRigidBody.angularVelocity = Vector3.zero;
         grabedRigidBody.useGravity = false;
         this._grabedObject.transform.position = this._hand.transform.position + this._hand.transform.forward * 2;
+        this._grabedObject.GetComponent<GrabableObject>().initPos = this._grabedObject.transform.position;
     }
-
-    //void LaunchObject()
-    //{
-    //    var tempElem = this._grabedObject;
-    //    this._grabedObject = null;
-    //    var grabedRigidBody = tempElem.GetComponent<Rigidbody>();
-    //    grabedRigidBody.useGravity = true;
-    //    tempElem.transform.SetParent(null);
-    //    grabedRigidBody.AddForce(this._hand.transform.forward, ForceMode.Impulse);
-    //    var boxCollider = tempElem.GetComponent<BoxCollider>();
-    //    boxCollider.isTrigger = false;
-    //}
 
     void ReleaseObject()
     {
@@ -157,6 +200,7 @@ public class InputControl : MonoBehaviour
         if (!objectScript.dirty)
         {
             var clonedObject = Instantiate(Object);
+            this.objectMaps[Object] = clonedObject;
             clonedObject.tag = "Untagged";
             clonedObject.GetComponent<GrabableObject>().setOutlined();
             Destroy(clonedObject.GetComponent<Rigidbody>());
@@ -165,4 +209,25 @@ public class InputControl : MonoBehaviour
             Object.GetComponent<GrabableObject>().dirty = true;
         }
     }
+
+    void CheckPlacement()
+    {
+        foreach(ref GameObject elem in objectMaps)
+        {
+
+        }
+    }
+
+    //void LaunchObject()
+    //{
+    //    var tempElem = this._grabedObject;
+    //    this._grabedObject = null;
+    //    var grabedRigidBody = tempElem.GetComponent<Rigidbody>();
+    //    grabedRigidBody.useGravity = true;
+    //    tempElem.transform.SetParent(null);
+    //    grabedRigidBody.AddForce(this._hand.transform.forward, ForceMode.Impulse);
+    //    var boxCollider = tempElem.GetComponent<BoxCollider>();
+    //    boxCollider.isTrigger = false;
+    //}
+
 }

@@ -9,20 +9,15 @@ public class GrabableObject : MonoBehaviour
     public Material outlined;
     private Material[] DefaultMaterials;
 
+    public Vector3 initPos;
+
     public bool dirty = false;
 
     public GameObject mesh;
-
-    // Start is called before the first frame update
+    
     void Start()
     {
         this.DefaultMaterials = mesh.GetComponent<Renderer>().materials;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        print(mesh.GetComponent<Renderer>().material);
     }
 
     public void HighLight()
@@ -57,4 +52,13 @@ public class GrabableObject : MonoBehaviour
         mesh.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
+    public void moveBackward(GameObject relativeTo)
+    {
+        transform.position = transform.position + relativeTo.transform.forward * 0.2f;
+    }
+
+    public void moveForward(GameObject relativeTo)
+    {   
+        transform.position = transform.position + relativeTo.transform.forward * -0.2f;
+    }
 }

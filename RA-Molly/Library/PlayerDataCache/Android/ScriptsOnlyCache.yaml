@@ -51,25 +51,25 @@ ScriptsOnlyBuild:
     - Class: 109
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 9896}
+      Script: {instanceID: 9900}
     - Class: 114
-      Script: {instanceID: 10040}
+      Script: {instanceID: 10038}
     - Class: 114
-      Script: {instanceID: 10198}
+      Script: {instanceID: 10196}
     - Class: 114
-      Script: {instanceID: 10504}
+      Script: {instanceID: 10502}
     - Class: 114
-      Script: {instanceID: 10574}
+      Script: {instanceID: 10572}
     - Class: 114
-      Script: {instanceID: 10616}
+      Script: {instanceID: 10614}
+    - Class: 114
+      Script: {instanceID: 10716}
     - Class: 114
       Script: {instanceID: 10796}
     - Class: 114
       Script: {instanceID: 11496}
     - Class: 114
       Script: {instanceID: 11966}
-    - Class: 114
-      Script: {instanceID: 22634}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 120
@@ -605,6 +605,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.TextMeshPro.dll
     namespaceName: TMPro
     className: TMP_SpriteAsset
+  - hash:
+      serializedVersion: 2
+      Hash: b7fbfd69f9e56caceea6b054b2330342
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: GrabableObject
   - hash:
       serializedVersion: 2
       Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
@@ -1637,12 +1643,6 @@ ScriptsOnlyBuild:
     assemblyName: Unity.Timeline.dll
     namespaceName: UnityEngine.Timeline
     className: PlayableTrack
-  - hash:
-      serializedVersion: 2
-      Hash: 8f1badac748b0094ad98879ba7cf8964
-    assemblyName: Assembly-CSharp.dll
-    namespaceName: 
-    className: GrabableObject
   platform: 13
   scenePathNames:
   - Assets/Scenes/ARTest/ARTest.unity
