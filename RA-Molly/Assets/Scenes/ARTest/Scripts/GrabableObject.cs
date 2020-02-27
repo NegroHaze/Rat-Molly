@@ -5,7 +5,6 @@ using UnityEngine;
 public class GrabableObject : MonoBehaviour
 {
     
-    public Material HighLightedMaterial;
     public Material outlined;
     private Material[] DefaultMaterials;
 
@@ -22,20 +21,20 @@ public class GrabableObject : MonoBehaviour
 
     public void HighLight()
     {
-        print("high");
         var tempArray = new List<Material>();
         for (int i = 0; i < mesh.GetComponent<Renderer>().materials.Length; i++)
         {
-            tempArray.Add(this.HighLightedMaterial);
+            mesh.GetComponent<Renderer>().materials[i].SetColor("_EmissionColor", Color.gray);
         }
-        print("ici");
-        mesh.GetComponent<Renderer>().materials = tempArray.ToArray();
     }
 
     public void RemoveHighLight()
     {
-        print("remove");
-        mesh.GetComponent<Renderer>().materials = this.DefaultMaterials;
+        var tempArray = new List<Material>();
+        for (int i = 0; i < mesh.GetComponent<Renderer>().materials.Length; i++)
+        {
+            mesh.GetComponent<Renderer>().materials[i].SetColor("_EmissionColor", Color.black);
+        }
     }
 
     public void setOutlined()
@@ -44,10 +43,8 @@ public class GrabableObject : MonoBehaviour
         for (int i = 0; i < mesh.GetComponent<Renderer>().materials.Length; i++)
         {
             tempArray.Add(this.outlined);
-            print(tempArray[i]);
         }
-
-        print("la");
+        
         mesh.GetComponent<Renderer>().materials = tempArray.ToArray();
         mesh.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }

@@ -1,5 +1,5 @@
 sceneSetups:
-- path: Assets/Scenes/ARTest/ARTest.unity
+- path: Assets/Scenes/MenuText.unity
   isLoaded: 1
   isActive: 1
   isSubScene: 0

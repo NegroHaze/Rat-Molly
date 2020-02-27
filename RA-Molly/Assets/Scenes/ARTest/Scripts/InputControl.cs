@@ -9,7 +9,8 @@ public class InputControl : MonoBehaviour
     private GameObject _rightHand;
     private GameObject _hand;
     private GameObject _head;
-    private GameObject _grabedObject;
+    public static GameObject grabedObject;
+    public static List<GameObject> clonedObjects = new List<GameObject>();
 
     private GameObject _highLightedObject;
 
@@ -21,8 +22,15 @@ public class InputControl : MonoBehaviour
 
     private float _verticalSpeed = 5f;
     private float _horizontalSpeed = 5f;
-    
-    public Dictionary<GameObject, GameObject> objectMaps = new Dictionary<GameObject, GameObject>();
+
+
+    private bool _isCheckPos;
+    private bool _isCheckAngles;
+
+    [Range(0.1f, 10f)]
+    public float RATIOMAGNETPOSITION = 2f;
+    [Range(0.1f, 10f)]
+    public float RATIONMAGNETANGLES = 25f;
 
     void Start()
     {
@@ -30,10 +38,6 @@ public class InputControl : MonoBehaviour
         this._rightHand = GameObject.Find("RightHand");
         this._hand = GameObject.Find("Hand");
         this._head = GameObject.Find("Head");
-
-
-        this.objectMaps.Add(GameObject.Find("Cube"), null);
-        this.objectMaps.Add(GameObject.Find("waterMeter"), null);
     }
 
     void Update()
@@ -44,23 +48,22 @@ public class InputControl : MonoBehaviour
             {
                 this._hand.transform.rotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTrackedRemote);
             }
-            else if (OVRInput.Get(OVRInput.Button.One) && this._grabedObject)
+            else if (OVRInput.Get(OVRInput.Button.One) && grabedObject)
             {
-                this._grabedObject.transform.rotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTrackedRemote);
+                grabedObject.transform.rotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTrackedRemote);
             }
         }
         else
         {
             if (Input.GetKey(KeyCode.LeftControl))
             {
-                print("coucou");
                 this._hand.GetComponent<LineRenderer>().enabled = true;
                 this._rightHand.transform.Rotate(new Vector3(-Input.GetAxis("Mouse Y") * this._horizontalSpeed, 0f, 0f));
                 this._hand.transform.Rotate(new Vector3(0f, Input.GetAxis("Mouse X") * this._verticalSpeed, 0f));
             }
-            else if (Input.GetKey(KeyCode.LeftAlt) && this._grabedObject)
+            else if (Input.GetKey(KeyCode.LeftAlt) && grabedObject)
             {
-                this._grabedObject.transform.Rotate(new Vector3(Input.GetAxis("Mouse Y") * _rotationSpeed, -Input.GetAxis("Mouse X") * _rotationSpeed, 0f), Space.World);
+                grabedObject.transform.Rotate(new Vector3(Input.GetAxis("Mouse Y") * _rotationSpeed, -Input.GetAxis("Mouse X") * _rotationSpeed, 0f), Space.World);
             }
             else
             {
@@ -72,6 +75,15 @@ public class InputControl : MonoBehaviour
 
         this.ManageController();
         this.ManageGrabedPosition();
+        if (grabedObject != null && GameObject.Find(grabedObject.name + "(Clone)"))
+        {
+            print(clonedObjects.Count);
+            var clone = clonedObjects.Find(o => o.name == grabedObject.name + "(Clone)");
+            if (clone)
+            {
+                this.CheckPlacement(clone);
+            }
+        }
     }
 
     void ManageController()
@@ -83,21 +95,19 @@ public class InputControl : MonoBehaviour
 
         if (hit.collider)
         {
-            if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != this._grabedObject && !this._grabedObject)
+            if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != grabedObject && !grabedObject)
             {
                 if (this._highLightedObject != null && this._highLightedObject != hit.transform.gameObject)
                 {
-                    print("removing highLight");
                     this._highLightedObject.GetComponent<GrabableObject>().RemoveHighLight();
                 }
                 if (this._highLightedObject != hit.transform.gameObject)
                 {
-                    print("highLight");
                     this._highLightedObject = hit.transform.gameObject;
                     this._highLightedObject.transform.gameObject.GetComponent<GrabableObject>().HighLight();
                 }
             }
-            else if (this._highLightedObject != null && this._highLightedObject != hit.transform.gameObject && !this._grabedObject)
+            else if (this._highLightedObject != null && this._highLightedObject != hit.transform.gameObject && !grabedObject)
             {
                 this._highLightedObject.GetComponent<GrabableObject>().RemoveHighLight();
                 this._highLightedObject = null;
@@ -106,31 +116,29 @@ public class InputControl : MonoBehaviour
 
             if (XRDevice.isPresent)
             {
-                if (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) && !this._grabedObject)
+                if (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) && !grabedObject)
                 {
-                    if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != this._grabedObject)
+                    if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != grabedObject)
                     {
-                        print("Grab");
                         this.GrabObject(hit.transform.gameObject);
                     }
                 }
-                else if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) && this._grabedObject)
+                else if (OVRInput.GetUp(OVRInput.Button.PrimaryIndexTrigger, OVRInput.Controller.RTrackedRemote) && grabedObject)
                 {
-                    print("Release");
                     this.ReleaseObject();
                 }
             }
             else
             {
-                if (Input.GetMouseButton(0) && !this._grabedObject)
+                if (Input.GetMouseButton(0) && !grabedObject)
                 {
-
-                    print("Grab");
-                    this.GrabObject(hit.transform.gameObject);
+                    if (hit.transform.gameObject.tag == "Grabable" && hit.transform.gameObject != grabedObject)
+                    {
+                        this.GrabObject(hit.transform.gameObject);
+                    }
                 }
-                else if (!Input.GetMouseButton(0) && this._grabedObject)
+                else if (!Input.GetMouseButton(0) && grabedObject)
                 {
-                    print("Release");
                     this.ReleaseObject();
                 }
 
@@ -140,94 +148,117 @@ public class InputControl : MonoBehaviour
 
     void ManageGrabedPosition()
     {
-        if (!this._grabedObject || OVRInput.Get(OVRInput.Button.One)) { return; }
+        if (!grabedObject || OVRInput.Get(OVRInput.Button.One)) { return; }
         if (XRDevice.isPresent)
         {
             Vector2 primaryTouchpad = OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad);
             if (primaryTouchpad.y < 0f)
             {
-                this._grabedObject.GetComponent<GrabableObject>().moveForward(this._hand);
+                grabedObject.GetComponent<GrabableObject>().moveForward(this._hand);
             }
             else if (primaryTouchpad.y > 0f)
             {
-                this._grabedObject.GetComponent<GrabableObject>().moveBackward(this._hand);
+                grabedObject.GetComponent<GrabableObject>().moveBackward(this._hand);
             }
         }
         else
         {
             if (Input.GetAxis("Mouse ScrollWheel") < 0f)
             {
-                this._grabedObject.GetComponent<GrabableObject>().moveForward(this._hand);
+                grabedObject.GetComponent<GrabableObject>().moveForward(this._hand);
             }
             else if (Input.GetAxis("Mouse ScrollWheel") > 0f)
             {
-                this._grabedObject.GetComponent<GrabableObject>().moveBackward(this._hand);
+                grabedObject.GetComponent<GrabableObject>().moveBackward(this._hand);
             }
         }
     }
 
     void GrabObject(GameObject gameObject)
     {
-        this._grabedObject = gameObject;
-        this.CloneGrabable(this._grabedObject);
+        grabedObject = gameObject;
         gameObject.transform.SetParent(this._hand.transform);
-        var grabedRigidBody = this._grabedObject.GetComponent<Rigidbody>();
-        var boxCollider = this._grabedObject.GetComponent<BoxCollider>();
+        var grabedRigidBody = grabedObject.GetComponent<Rigidbody>();
+        var boxCollider = grabedObject.GetComponent<Collider>();
         boxCollider.isTrigger = false;
         grabedRigidBody.velocity = Vector3.zero;
         grabedRigidBody.constraints = RigidbodyConstraints.FreezeAll;
         grabedRigidBody.angularVelocity = Vector3.zero;
         grabedRigidBody.useGravity = false;
-        this._grabedObject.transform.position = this._hand.transform.position + this._hand.transform.forward * 2;
-        this._grabedObject.GetComponent<GrabableObject>().initPos = this._grabedObject.transform.position;
+        grabedObject.GetComponent<GrabableObject>().initPos = grabedObject.transform.position;
     }
 
     void ReleaseObject()
     {
-        var tempElem = this._grabedObject;
-        this._grabedObject = null;
+        var tempElem = grabedObject;
+        Vector3 tempPosClone = Vector3.zero;
+        Quaternion tempAngleClone = new Quaternion();
+        GameObject clone = null;
+        if (GameObject.Find(grabedObject.name + "(Clone)"))
+        {
+            clone = clonedObjects.Find(o => o.name == grabedObject.name + "(Clone)");
+
+            if (clone)
+            {
+                tempPosClone = clone.transform.position;
+                tempAngleClone = clone.transform.rotation;
+            }
+
+        }
+        grabedObject = null;
         var grabedRigidBody = tempElem.GetComponent<Rigidbody>();
         grabedRigidBody.constraints = RigidbodyConstraints.None;
-        grabedRigidBody.useGravity = true;
+
+        if (tempPosClone != Vector3.zero)
+        {
+            grabedRigidBody.useGravity = this._isCheckPos || this._isCheckAngles;
+        } else
+        {
+            grabedRigidBody.useGravity = true;
+        }
+
         tempElem.transform.SetParent(null);
-        var boxCollider = tempElem.GetComponent<BoxCollider>();
+        var boxCollider = tempElem.GetComponent<MeshCollider>();
         boxCollider.isTrigger = false;
-    }
 
-    void CloneGrabable(GameObject Object)
-    {
-        var objectScript = Object.GetComponent<GrabableObject>();
-        if (!objectScript.dirty)
+        if (this._isCheckPos)
         {
-            var clonedObject = Instantiate(Object);
-            this.objectMaps[Object] = clonedObject;
-            clonedObject.tag = "Untagged";
-            clonedObject.GetComponent<GrabableObject>().setOutlined();
-            Destroy(clonedObject.GetComponent<Rigidbody>());
-            Destroy(clonedObject.GetComponent<GrabableObject>());
-            clonedObject.GetComponent<BoxCollider>().isTrigger = true;
-            Object.GetComponent<GrabableObject>().dirty = true;
+            tempElem.tag = "Untagged";
+            clonedObjects.Remove(GameObject.Find(tempElem.name + "(Clone)"));
+            Destroy(GameObject.Find(tempElem.name + "(Clone)"));
+            this.ReplaceAxes(tempPosClone, tempElem);
+            this.ReplaceAngles(tempAngleClone, tempElem);
+            tempElem.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
         }
     }
 
-    void CheckPlacement()
+    void CheckPlacement(GameObject clone)
     {
-        foreach(ref GameObject elem in objectMaps)
-        {
+        var grabedPosition = grabedObject.transform.position;
+        var clonePosition = clone.transform.position;
 
-        }
+        var grabedAngle = grabedObject.transform.rotation.eulerAngles;
+        var cloneAngle = clone.transform.rotation.eulerAngles;
+
+        this._isCheckPos = this.CheckAxes(clonePosition, grabedPosition, RATIOMAGNETPOSITION);
+        this._isCheckAngles = this.CheckAxes(cloneAngle, grabedAngle, RATIONMAGNETANGLES);
     }
 
-    //void LaunchObject()
-    //{
-    //    var tempElem = this._grabedObject;
-    //    this._grabedObject = null;
-    //    var grabedRigidBody = tempElem.GetComponent<Rigidbody>();
-    //    grabedRigidBody.useGravity = true;
-    //    tempElem.transform.SetParent(null);
-    //    grabedRigidBody.AddForce(this._hand.transform.forward, ForceMode.Impulse);
-    //    var boxCollider = tempElem.GetComponent<BoxCollider>();
-    //    boxCollider.isTrigger = false;
-    //}
+    bool CheckAxes(Vector3 cloneAxes, Vector3 grabAxes, float ratio)
+    {
+        var checkX = (cloneAxes.x - ratio) < grabAxes.x && grabAxes.x < (cloneAxes.x + ratio);
+        var checkY = (cloneAxes.y - ratio) < grabAxes.y && grabAxes.y < (cloneAxes.y + ratio);
+        var checkZ = (cloneAxes.z - ratio) < grabAxes.z && grabAxes.z < (cloneAxes.z + ratio);
+        return checkX && checkY && checkZ;
 
+    }
+
+    void ReplaceAxes(Vector3 cloneObj, GameObject grabObj)
+    {
+        grabObj.transform.position = cloneObj;
+    }
+    void ReplaceAngles(Quaternion cloneObj, GameObject grabObj)
+    {
+        grabObj.transform.rotation = cloneObj;
+    }
 }
